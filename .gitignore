@@ -1,0 +1,10 @@
+data/
+logs/
+result_finetune/
+smpl_models/
+
+*.pyc
+*.zip
+*.png
+result/
+*.sh

@@ -1,0 +1,3 @@
+[submodule "drivestudio"]
+	path = drivestudio
+	url = https://github.com/ziyc/drivestudio.git

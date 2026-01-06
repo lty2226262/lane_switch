@@ -1,0 +1,34 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Python: lane_switch_train (kitti offset 3m)",
+			"type": "debugpy",
+			"request": "launch",
+			"program": "${workspaceFolder}/lane_switch_train.py",
+			"args": [
+				"--config_file",
+				"configs/omnire.yaml",
+				"--output_root",
+				"result_finetune",
+				"--project",
+				"kitti",
+				"--run_name",
+				"2011_09_26_drive_0001_syncoffset3m",
+				"--resume_from",
+				"data/kitti/processed/2011_09_26_drive_0001_sync/ckpts/checkpoint_init.pth",
+				"dataset=kitti/1cams_finetune",
+				"data.scene_idx=2011_09_26_drive_0001_sync",
+				"trainer.optim.num_iters=300",
+				"render.render_novel.offset=3"
+			],
+			"env": {
+				"CUDA_VISIBLE_DEVICES": "2"
+			},
+			"console": "integratedTerminal"
+		}
+	]
+}

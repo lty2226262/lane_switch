@@ -29,6 +29,57 @@
 				"CUDA_VISIBLE_DEVICES": "2"
 			},
 			"console": "integratedTerminal"
+		},
+		{
+			"name": "Python: lane_switch_eval (drivestudio offset -3m)",
+			"type": "debugpy",
+			"request": "launch",
+			"program": "${workspaceFolder}/lane_switch_eval.py",
+			"args": [
+				"--resume_from",
+				"result_finetune/deeproute/YR-C01-20_20251029_065835_20251029072855000896_20251029072909999149/checkpoint_final.pth",
+				"render.render_novel.traj_types=[fixed_offset]",
+				"render.render_novel.offset=-3",
+				"render.render_full=false",
+				"render.render_test=false"
+			],
+			"env": {
+				"CUDA_VISIBLE_DEVICES": "0"
+			},
+			"console": "integratedTerminal"
+		},
+		{
+			"name": "Python: lane_switch_train (deeproute offset -3m)",
+			"type": "debugpy",
+			"request": "launch",
+			"program": "${workspaceFolder}/lane_switch_train.py",
+			"args": [
+				"--config_file",
+				"drivestudio/configs/omnire_deeproute.yaml",
+				"--output_root",
+				"result_finetune",
+				"--project",
+				"deeproute",
+				"--run_name",
+				"YR-C01-20_20251124_090900_20251124092220000134_20251124092234995919_offset_-3",
+				"--resume_from",
+				"drivestudio/output/deeproute/YR-C01-20_20251124_090900_20251124092220000134_20251124092234995919/checkpoint_init.pth",
+				"dataset=deeproute/1cams",
+				"data.scene_idx=YR-C01-20_20251124_090900_20251124092220000134_20251124092234995919",
+				"data.start_timestep=0",
+				"data.end_timestep=-1",
+				"trainer.optim.num_iters=600",
+				"render.render_novel.offset=-3",
+				"render.render_full=false",
+				"render.render_test=false",
+				"logging.saveckpt_freq=150",
+				"logging.print_freq=10"
+			],
+			"env": {
+				"CUDA_VISIBLE_DEVICES": "0",
+				"HF_ENDPOINT": "https://hf-mirror.com"
+			},
+			"console": "integratedTerminal"
 		}
 	]
 }

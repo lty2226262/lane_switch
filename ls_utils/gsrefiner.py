@@ -18,6 +18,7 @@ import types
 import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+import os
 
 import PIL.Image
 from PIL import Image
@@ -99,42 +100,57 @@ class ViTExtractor:
 
     @staticmethod
     def create_model(model_type: str) -> nn.Module:
-        """
-        :param model_type: a string specifying which model to load. [dino_vits8 | dino_vits16 | dino_vitb8 |
-                           dino_vitb16 | vit_small_patch8_224 | vit_small_patch16_224 | vit_base_patch8_224 |
-                           vit_base_patch16_224]
-        :return: the model
-        """
         if 'dino' in model_type:
-            dino_path = Path.home() / '.cache/torch/hub/facebookresearch_dino_main'
-            
-            # 动态导入 DINO 的 utils 以避免名称冲突
-            dino_utils_path = dino_path / 'utils.py'
-            spec = importlib.util.spec_from_file_location("dino_utils", dino_utils_path)
-            dino_utils_module = importlib.util.module_from_spec(spec)
-            sys.modules['utils'] = dino_utils_module  # 临时替换 utils
-            spec.loader.exec_module(dino_utils_module)
-            
-            sys.path.insert(0, str(dino_path))
-            model = torch.hub.load('facebookresearch/dino:main', model_type)
-            sys.path.pop(0)
-            
-            # 恢复原来的 utils 模块
-            if 'utils' in sys.modules:
-                del sys.modules['utils']
-        else:  # model from timm -- load weights from timm to dino model (enables working on arbitrary size images).
-            temp_model = timm.create_model(model_type, pretrained=True)
-            model_type_dict = {
-                'vit_small_patch16_224': 'dino_vits16',
-                'vit_small_patch8_224': 'dino_vits8',
-                'vit_base_patch16_224': 'dino_vitb16',
-                'vit_base_patch8_224': 'dino_vitb8'
-            }
+            env_repo = os.environ.get("DINO_REPO_PATH", "").strip()
+
+            candidates = []
+            if env_repo:
+                candidates.append(Path(env_repo))
+
+            hub_root = Path.home() / ".cache/torch/hub"
+            candidates += [
+                hub_root / "facebookresearch-dino-main",
+            ]
+            candidates += sorted(hub_root.glob("facebookresearch-dino-*"))
+
+            dino_repo = next((p for p in candidates if (p / "hubconf.py").is_file()), None)
+
+            if dino_repo is None:
+                return torch.hub.load("facebookresearch/dino:main", model_type)
+
+            old_utils = sys.modules.get("utils", None)
+            if "utils" in sys.modules:
+                del sys.modules["utils"]
+
+            sys.path.insert(0, str(dino_repo))
+            try:
+                model = torch.hub.load(str(dino_repo), model_type, source="local")
+            finally:
+                sys.path.pop(0)
+                if old_utils is not None:
+                    sys.modules["utils"] = old_utils
+
+            return model
+
+        # model from timm -- load weights from timm to dino model (enables working on arbitrary size images).
+        temp_model = timm.create_model(model_type, pretrained=True)
+        model_type_dict = {
+            'vit_small_patch16_224': 'dino_vits16',
+            'vit_small_patch8_224': 'dino_vits8',
+            'vit_base_patch16_224': 'dino_vitb16',
+            'vit_base_patch8_224': 'dino_vitb8'
+        }
+
+        hub_root = Path.home() / ".cache/torch/hub"
+        local_repo = hub_root / "facebookresearch_dino_main"
+        if (local_repo / "hubconf.py").is_file():
+            model = torch.hub.load(str(local_repo), model_type_dict[model_type], source="local")
+        else:
             model = torch.hub.load('facebookresearch/dino:main', model_type_dict[model_type])
-            temp_state_dict = temp_model.state_dict()
-            del temp_state_dict['head.weight']
-            del temp_state_dict['head.bias']
-            model.load_state_dict(temp_state_dict)
+        temp_state_dict = temp_model.state_dict()
+        del temp_state_dict['head.weight']
+        del temp_state_dict['head.bias']
+        model.load_state_dict(temp_state_dict)
         return model
 
     @staticmethod
@@ -612,7 +628,7 @@ class GSRefinerPipeline(
         self.register_to_config(requires_safety_checker=requires_safety_checker)
 
         self.dino_extractor = ViTExtractor(model_type='dino_vits8', stride=4)
-        self.dino_threshold = 0.5
+        self.dino_threshold = 0.9
         self.fft_scale = 0.3
 
 

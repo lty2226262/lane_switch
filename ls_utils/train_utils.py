@@ -7,7 +7,7 @@ from .gsrefiner import GSRefinerPipeline
 from .math_utils import make_lateral_offset_pose
 from datasets.base.pixel_source import get_rays
 
-
+DEBUG_OUTPUT = False
 _REFINE_MODEL_SINGLETON: Optional[torch.nn.Module] = None
 
 class _GSRefinerWrapper(torch.nn.Module):
@@ -15,7 +15,7 @@ class _GSRefinerWrapper(torch.nn.Module):
     Thin wrapper to expose a .forward(gt_rgb, shifted_rgb) API for GSRefinerPipeline/Difix.
     gt_rgb, shifted_rgb: float tensors in [0,1], shape [B,H,W,3] or [H,W,3].
     """
-    def __init__(self, pretrained_id: str = "nvidia/difix_ref", device: torch.device = torch.device("cuda")):
+    def __init__(self, pretrained_id: str = "lty2226262/gsrefiner", device: torch.device = torch.device("cuda")):
         super().__init__()
         self.pipe = GSRefinerPipeline.from_pretrained(pretrained_id, trust_remote_code=True)
         # Use fp16 to reduce VRAM
@@ -74,7 +74,7 @@ def get_refiner(cfg, device: torch.device, reload: bool = False) -> torch.nn.Mod
     if _REFINE_MODEL_SINGLETON is not None and not reload:
         return _REFINE_MODEL_SINGLETON
     refine_cfg = getattr(cfg, "refiner", None)
-    pretrained_id = getattr(refine_cfg, "pretrained_id", "nvidia/difix_ref") if refine_cfg else "nvidia/difix_ref"
+    pretrained_id = getattr(refine_cfg, "pretrained_id", "lty2226262/gsrefiner") if refine_cfg else "lty2226262/gsrefiner"
     model = _GSRefinerWrapper(pretrained_id=pretrained_id, device=device)
     _REFINE_MODEL_SINGLETON = model
     return _REFINE_MODEL_SINGLETON
@@ -145,6 +145,12 @@ def _render_with_lateral_offset(trainer, image_infos: dict, cam_infos: dict, lat
     image_infos_shifted["origins"] = origins.reshape(H_new, W_new, 3)
     image_infos_shifted["viewdirs"] = viewdirs.reshape(H_new, W_new, 3)
     image_infos_shifted["direction_norm"] = direction_norm.reshape(H_new, W_new, 1)
+    image_infos_shifted["img_idx"] = torch.full((H_new, W_new), image_infos["img_idx"][0][0], dtype=torch.long, device=origins.device)
+    image_infos_shifted["frame_idx"] = torch.full((H_new, W_new), image_infos["frame_idx"][0][0], dtype=torch.long, device=origins.device)
+    image_infos_shifted["normed_time"] = torch.full((H_new, W_new), image_infos["normed_time"][0][0], dtype=torch.float32, device=origins.device)
+    image_infos_shifted["pixel_coords"] = torch.stack(
+        [y.float()/ H_new, x.float()/ W_new], dim=-1
+    )
 
     saved_affine_model = trainer.models.pop("Affine", None)
     outputs = trainer(image_infos_shifted, cam_infos_shifted, novel_view=True)
@@ -193,6 +199,17 @@ def add_lateral_refine_loss(
     # Refiner is inference-only; do not track gradients inside it
     with torch.inference_mode():
         refined = model(gt, shifted).clamp(0.0, 1.0)
+
+    if DEBUG_OUTPUT:
+        from pathlib import Path
+        out_dir = Path("debug_refiner_outputs")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        arr = (gt.detach().cpu().numpy() * 255.0).clip(0, 255).astype("uint8")
+        Image.fromarray(arr).save(out_dir / f"{trainer.step:05d}_ref_{lateral_m:.2f}m.png")
+        arr = (shifted.detach().cpu().numpy() * 255.0).clip(0, 255).astype("uint8")
+        Image.fromarray(arr).save(out_dir / f"{trainer.step:05d}_input_{lateral_m:.2f}m.png")
+        arr = (refined.detach().cpu().numpy() * 255.0).clip(0, 255).astype("uint8")
+        Image.fromarray(arr).save(out_dir / f"{trainer.step:05d}_output_{lateral_m:.2f}m.png")
 
     # 0.8 * L2 + 0.2 * (1 - SSIM), SSIM computed via model.ssim (NCHW)
     l2 = torch.mean((refined - shifted) ** 2)

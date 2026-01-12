@@ -133,7 +133,7 @@ def main(args):
         num_full_images=len(dataset.full_image_set),
         test_set_indices=dataset.test_timesteps,
         scene_aabb=dataset.get_aabb().reshape(2, 3),
-        device=device
+        device=device #, num_cams=dataset.pixel_source.num_cams for DR modified GS
     )
     
     # NOTE: If resume, gaussians will be loaded from checkpoint
@@ -180,6 +180,9 @@ def main(args):
 
     lateral_offset_max = cfg.render.render_novel.offset
     refiner = get_refiner(cfg, device=device)
+
+    # Track stage transitions for pretty logging
+    prev_stage_index = None
 
     for step in metric_logger.log_every(all_iters, cfg.logging.print_freq):
         #----------------------------------------------------------------------------
@@ -258,9 +261,39 @@ def main(args):
             outputs=outputs,
             image_infos=image_infos,
             cam_infos=cam_infos,
+            step=step,
+            camera_data=dataset.pixel_source.camera_data
         )
 
-        lateral_offset = torch.rand(1).item() * lateral_offset_max
+        # Progressive lateral offset: split |max| into 0.5m stages.
+        # Early training samples offsets close to 0, later samples farther away.
+        # Supports negative max (opposite direction) by applying the sign at the end.
+        stage_size_m = 0.5
+        max_abs = float(abs(lateral_offset_max))
+        if max_abs == 0.0:
+            lateral_offset = 0.0
+        else:
+            num_stages = max(1, int(np.ceil(max_abs / stage_size_m)))
+            progress = float(step) / float(max(1, trainer.num_iters))  # in [0, 1]
+            progress = min(max(progress, 0.0), 1.0)
+            stage_index = min(int(progress * num_stages), num_stages - 1)
+
+            stage_low_abs = stage_index * stage_size_m
+            stage_high_abs = min((stage_index + 1) * stage_size_m, max_abs)
+            sign = 1.0 if lateral_offset_max >= 0 else -1.0
+            stage_low = sign * stage_low_abs
+            stage_high = sign * stage_high_abs
+
+            # Pretty logging on stage change
+            if prev_stage_index != stage_index:
+                logger.info(
+                    f"=== LateralOffset Stage {stage_index+1}/{num_stages} @ step {step} "
+                    f"range [{stage_low:.2f} m, {stage_high:.2f} m] ==="
+                )
+                prev_stage_index = stage_index
+
+            sampled_abs = stage_low_abs + torch.rand(1).item() * (stage_high_abs - stage_low_abs)
+            lateral_offset = sign * sampled_abs
 
         name, lateral_refine_loss = add_lateral_refine_loss(
             trainer=trainer,
@@ -280,10 +313,10 @@ def main(args):
                 raise ValueError(f"NaN detected in loss {k} at step {step}")
             if torch.isinf(v).any():
                 raise ValueError(f"Inf detected in loss {k} at step {step}")
-        trainer.backward(loss_dict)
+        trainer.backward(loss_dict) #, step) for DR modified GS
         
         # after training step
-        trainer.postprocess_per_train_step(step=step)
+        trainer.postprocess_per_train_step(step=step) #, dataset=dataset) for DR modified GS
         
         #----------------------------------------------------------------------------
         #-------------------------------  logging  ----------------------------------

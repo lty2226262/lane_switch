@@ -55,7 +55,7 @@ render:
   vis_error: false # whether to visualize error map
 
 refiner:
-  pretrained_id: nvidia/difix_ref
+  pretrained_id: lty2226262/gsrefiner
 
 trainer:
   optim:

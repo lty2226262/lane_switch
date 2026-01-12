@@ -2,9 +2,16 @@ data/
 logs/
 result_finetune/
 smpl_models/
+output/
 
 *.pyc
 *.zip
 *.png
 result/
 *.sh
+
+drivestudio_mod/
+drivestudio_ori/
+drivestudio_old/
+drivestudio
+configs/datasets/deeproute

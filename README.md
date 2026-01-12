@@ -3,11 +3,11 @@
 <div align="center">
     <p>
         <!-- Fill authors as needed -->
-        <a href="[https://scholar.google.com/citations?user=NAt3vgcAAAAJ&hl=en]">Tianyu Liu</a><sup>1</sup>
-        <a href="[https://scholar.google.com/citations?user=yRAHVcgAAAAJ&hl=en]">Yuan Liu</a><sup>1†</sup>
+        <a href="https://scholar.google.com/citations?user=NAt3vgcAAAAJ&hl=en">Tianyu Liu</a><sup>1</sup>
+        <a href="https://scholar.google.com/citations?user=yRAHVcgAAAAJ&hl=en">Yuan Liu</a><sup>1†</sup>
         <a href="[AUTHOR_LINK_TBD]">Bin Ma</a><sup>2</sup>
-        <a href="[https://scholar.google.com/citations?user=liaSLT8AAAAJ&hl=en]">Kunming Luo</a><sup>1</sup>
-        <a href="[https://scholar.google.com/citations?user=XhyKVFMAAAAJ&hl=en]">Ping Tan</a><sup>1†</sup>&nbsp;&nbsp;
+        <a href="https://scholar.google.com/citations?user=liaSLT8AAAAJ&hl=en">Kunming Luo</a><sup>1</sup>
+        <a href="https://scholar.google.com/citations?user=XhyKVFMAAAAJ&hl=en">Ping Tan</a><sup>1†</sup>&nbsp;&nbsp;
     </p>
     <p>
         <sup>1</sup>The Hong Kong University of Science and Technology &nbsp;&nbsp;&nbsp;

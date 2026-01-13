@@ -5,7 +5,7 @@
         <!-- Fill authors as needed -->
         <a href="https://scholar.google.com/citations?user=NAt3vgcAAAAJ&hl=en">Tianyu Liu</a><sup>1</sup>
         <a href="https://scholar.google.com/citations?user=yRAHVcgAAAAJ&hl=en">Yuan Liu</a><sup>1†</sup>
-        <a href="[AUTHOR_LINK_TBD]">Bin Ma</a><sup>2</sup>
+        <a href="https://www.linkedin.com/in/bin-ma-983b6624">Bin Ma</a><sup>2</sup>
         <a href="https://scholar.google.com/citations?user=liaSLT8AAAAJ&hl=en">Kunming Luo</a><sup>1</sup>
         <a href="https://scholar.google.com/citations?user=XhyKVFMAAAAJ&hl=en">Ping Tan</a><sup>1†</sup>&nbsp;&nbsp;
     </p>
@@ -22,13 +22,13 @@
     <a href="[PAPER_LINK_TBD]" target="_blank">
     <img src="https://img.shields.io/badge/Paper-00AEEF?style=plastic&logo=arxiv&logoColor=white" alt="Paper">
     </a>
-    <a href="[PROJECT_PAGE_LINK_TBD]" target="_blank">
+    <a href="https://lty2226262.github.io/lane-switch-gaussian-splatting/" target="_blank">
     <img src="https://img.shields.io/badge/Project%20Page-F78100?style=plastic&logo=google-chrome&logoColor=white" alt="Project Page">
     </a>
 </p>
 
 <div align="center">
-    <a href="[PROJECT_PAGE_LINK_TBD]">
+    <a href="https://lty2226262.github.io/lane-switch-gaussian-splatting/">
         <img src="assets/main.gif" width="50%">
     </a>
     <p>
